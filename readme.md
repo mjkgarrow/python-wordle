@@ -2,7 +2,7 @@
 
 This program uses all in-built Python packages, no need for a virtual environment.
 
-## Usage
+## Installation
 Clone repo
 ```
 git clone git@github.com:mjkgarrow/python-wordle.git
@@ -12,6 +12,23 @@ Play game
 ```
 python3 wordle.py
 ```
+
+## How to play
+
+Press 1 to use official Wordle words, the default is a list of more common 5-letter words.
+
+Guess the word in 6 tries.
+
+Each guess must be a valid 5-letter word.
+The color of the tiles will change to show how close your guess was to the word.
+
+![Example usage](./example.png)
+
+Green - means the letter is in the word and in the correct spot.
+
+Orange - means the letter is in the word but in the wrong spot.
+
+Grey - means the letter is not in the word in any spot.
 
 ## Word usage
 
