@@ -180,127 +180,175 @@ def print_keyboard(window, accurate_letters,
                               curses.color_pair(0))
 
 
-def play_game(window, rounds, round, word_list, wordle_word, used_letters, correct_letters, accurate_letters):
+def get_words(window):
+    # Reset no delay
+    window.nodelay(False)
 
+    # Get terminal size so game is centred
+    window_sizes = get_window_sizes()  # [x,y]
+
+    # Clear screen and print start prompt
+    window.erase()
+
+    window.addstr(window_sizes[1] + 5,
+                  window_sizes[0] - 11,
+                  "Press 1 to use official Wordle words, otherwise press key any to use common words",
+                  curses.color_pair(4))
+
+    window.refresh()
+
+    # Get user input
+    key = window.getch()
+
+    if key == 50:
+        # Get random 5-letter word for common words
+        with open("words_long.txt", "r") as f:
+            word_list = f.read().upper().splitlines()
+            wordle_word = word_list[random.randint(0, len(word_list))]
+            return [word_list, wordle_word]
+    else:
+        # Get random 5-letter word for common words
+        with open("words.txt", "r") as f:
+            word_list = f.read().upper().splitlines()
+            wordle_word = word_list[random.randint(0, len(word_list))]
+            return [word_list, wordle_word]
+
+
+def play_game(window):
+
+    # Play game loop
     while True:
-        # Get terminal size so game is centred
-        window_sizes = get_window_sizes()  # [x,y]
 
-        window.nodelay(True)
+        words = get_words(window)
+        word_list = words[0]
+        wordle_word = words[1]
 
-        # Get user input
-        key = window.getch()
+        # Initialise game variables
+        rounds = [Word(), Word(), Word(), Word(), Word(), Word()]
+        round = 0
+        used_letters = []
+        correct_letters = []
+        accurate_letters = []
 
-        if check_ascii_input(key):
-            rounds[round].add_letter(chr(key))
-            used_letters.append(rounds[round][-1])
-            used_letters = used_letters[: (round * 5) + 5]
-        elif check_backspace(key):
-            rounds[round].remove_letter()
-            if len(rounds[round]) == 0:
-                if len(used_letters) % 5 != 0:
-                    used_letters = used_letters[:-1]
-            else:
-                used_letters = used_letters[:-1]
-        elif key == 9:
-            round = 6
-        elif check_esc(key):
-            quit()
-        elif check_enter_input(key):
-            if len(rounds[round]) == 0:
-                continue
-            if (len(rounds[round]) < 5) or (repr(rounds[round]) not in word_list):
-                used_letters = used_letters[:-len(rounds[round])]
-                rounds[round].incorrect(window, round, window_sizes)
+        while True:
+            # Get terminal size so game is centred
+            window_sizes = get_window_sizes()  # [x,y]
 
-            elif rounds[round].check_correct(wordle_word):
+            window.nodelay(True)
 
-                # Display correct word colouring
-                rounds[round].display_output(window, round,
-                                             wordle_word, window_sizes)
+            # Get user input
+            key = window.getch()
 
-                # Display winning prompt
-                window.nodelay(False)
-                window.move(0, 10)
-                window.clrtoeol()
-                if round == 0:
-                    window.addstr(window_sizes[1] + 3 + round,
-                                  window_sizes[0] + 30,
-                                  f"You got it right in {round + 1} round! Press any button to restart",
-                                  curses.color_pair(2))
+            if check_ascii_input(key):
+                rounds[round].add_letter(chr(key))
+                used_letters.append(rounds[round][-1])
+                used_letters = used_letters[: (round * 5) + 5]
+            elif check_backspace(key):
+                rounds[round].remove_letter()
+                if len(rounds[round]) == 0:
+                    if len(used_letters) % 5 != 0:
+                        used_letters = used_letters[:-1]
                 else:
-                    window.addstr(window_sizes[1] + 3 + round,
-                                  window_sizes[0] + 30,
-                                  f"You got it right in {round + 1} rounds! Press any button to restart",
-                                  curses.color_pair(2))
+                    used_letters = used_letters[:-1]
+            elif key == 9:
+                round = 6
+            elif check_esc(key):
+                quit()
+            elif check_enter_input(key):
+                if len(rounds[round]) == 0:
+                    continue
+                if (len(rounds[round]) < 5) or (repr(rounds[round]) not in word_list):
+                    used_letters = used_letters[:-len(rounds[round])]
+                    rounds[round].incorrect(window, round, window_sizes)
+
+                elif rounds[round].check_correct(wordle_word):
+
+                    # Display correct word colouring
+                    rounds[round].display_output(window, round,
+                                                 wordle_word, window_sizes)
+
+                    # Display winning prompt
+                    window.nodelay(False)
+                    window.move(0, 10)
+                    window.clrtoeol()
+                    if round == 0:
+                        window.addstr(window_sizes[1] + 3 + round,
+                                      window_sizes[0] + 30,
+                                      f"You got it right in {round + 1} round! Press any button to restart",
+                                      curses.color_pair(2))
+                    else:
+                        window.addstr(window_sizes[1] + 3 + round,
+                                      window_sizes[0] + 30,
+                                      f"You got it right in {round + 1} rounds! Press any button to restart",
+                                      curses.color_pair(2))
+
+                    # Reset game
+                    round = 0
+                    used_letters = []
+                    correct_letters = []
+                    accurate_letters = []
+                    for line in rounds:
+                        line.empty()
+
+                    window.refresh()
+
+                    # Wait for user to press key
+                    key = window.getch()
+                    break
+
+                else:
+                    # Update current round
+                    round += 1
+
+                    # Generate lists of correct letters for keyboard
+                    correct_letters = [char for char in
+                                       used_letters if char in wordle_word]
+
+                    accurate_letters = [item for sublist in
+                                        [x.accurate_letters(wordle_word) for
+                                         x in rounds] for item in sublist]
+
+            # Clear screen
+            window.erase()
+
+            # Round 6 means game is over
+            if round == 6:
+                window.addstr(window_sizes[1] + 2,
+                              window_sizes[0] + 10,
+                              f"You lost! The word was {wordle_word}",
+                              curses.color_pair(3))
+                window.refresh()
 
                 # Reset game
+                for line in rounds:
+                    line.empty()
                 round = 0
                 used_letters = []
                 correct_letters = []
                 accurate_letters = []
-                for line in rounds:
-                    line.empty()
-                wordle_word = word_list[random.randint(0, len(word_list))]
-
-                window.refresh()
-
-                # Wait for user to press key
-                key = window.getch()
-
+                # wordle_word = word_list[random.randint(0, len(word_list))].upper()
+                sleep(2)
+                break
             else:
-                # Update current round
-                round += 1
+                window.addstr(window_sizes[1],
+                              window_sizes[0] - 10,
+                              "Press 'esc' to quit, 'enter' to submit guess, 'tab' to see answer",
+                              curses.color_pair(4))
 
-                # Generate lists of correct letters for keyboard
-                correct_letters = [char for char in
-                                   used_letters if char in wordle_word]
+                for line in range(len(rounds)):
+                    if line < round:
+                        rounds[line].display_output(window, line,
+                                                    wordle_word, window_sizes)
+                    else:
+                        window.addstr(window_sizes[1] + 3 + line,
+                                      window_sizes[0] + 14,
+                                      rounds[line].create_square_string(),
+                                      curses.A_UNDERLINE)
 
-                accurate_letters = [item for sublist in
-                                    [x.accurate_letters(wordle_word) for
-                                     x in rounds] for item in sublist]
+            print_keyboard(window, accurate_letters,
+                           correct_letters, used_letters, window_sizes)
 
-        # Clear screen
-        window.erase()
-
-        # Round 6 means game is over
-        if round == 6:
-            window.addstr(window_sizes[1] + 2,
-                          window_sizes[0] + 10,
-                          f"You lost! The word was {wordle_word}",
-                          curses.color_pair(3))
             window.refresh()
-
-            # Reset game
-            for line in rounds:
-                line.empty()
-            round = 0
-            used_letters = []
-            correct_letters = []
-            accurate_letters = []
-            wordle_word = word_list[random.randint(0, len(word_list))].upper()
-            sleep(2)
-            continue
-        else:
-            window.addstr(window_sizes[1],
-                          window_sizes[0] - 10,
-                          "Press 'esc' to quit, 'enter' to submit guess, 'tab' to see answer",
-                          curses.color_pair(4))
-
-            for line in range(len(rounds)):
-                if line < round:
-                    rounds[line].display_output(window, line,
-                                                wordle_word, window_sizes)
-                else:
-                    window.addstr(window_sizes[1] + 3 + line,
-                                  window_sizes[0] + 14,
-                                  rounds[line].create_square_string(),
-                                  curses.A_UNDERLINE)
-
-        print_keyboard(window, accurate_letters,
-                       correct_letters, used_letters, window_sizes)
-
-        window.refresh()
 
 
 def main(window):
@@ -312,21 +360,7 @@ def main(window):
     for i in range(0, curses.COLORS):
         curses.init_pair(i, i, -1)
 
-    # Get random 5-letter word
-    with open("words.txt", "r") as f:
-        word_list = f.read().upper().splitlines()
-        wordle_word = word_list[random.randint(0, len(word_list))]
-
-    # Initialise game variables
-    rounds = [Word(), Word(), Word(), Word(), Word(), Word()]
-    round = 0
-    used_letters = []
-    correct_letters = []
-    accurate_letters = []
-
-    # Play game loop
-    play_game(window, rounds, round, word_list, wordle_word,
-              used_letters, correct_letters, accurate_letters)
+    play_game(window)
 
 
 if __name__ == "__main__":
