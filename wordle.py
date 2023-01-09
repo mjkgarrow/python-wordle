@@ -200,7 +200,7 @@ def get_words(window):
     # Get user input
     key = window.getch()
 
-    if key == 50:
+    if key == 49:
         # Get random 5-letter word for common words
         with open("words_long.txt", "r") as f:
             word_list = f.read().upper().splitlines()
@@ -334,6 +334,11 @@ def play_game(window):
                               window_sizes[0] - 10,
                               "Press 'esc' to quit, 'enter' to submit guess, 'tab' to see answer",
                               curses.color_pair(4))
+
+                window.addstr(window_sizes[1] + 2,
+                              window_sizes[0] + 14,
+                              "           ",
+                              curses.A_UNDERLINE)
 
                 for line in range(len(rounds)):
                     if line < round:
