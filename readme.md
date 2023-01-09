@@ -15,12 +15,13 @@ python3 wordle.py
 
 ## How to play
 
-Press 1 to use official Wordle words, the default is a list of more common 5-letter words.
+Press 1 to use official Wordle words, or any other key to select the default list of more common 5-letter words.
 
 Guess the word in 6 tries.
 
 Each guess must be a valid 5-letter word.
-The color of the tiles will change to show how close your guess was to the word.
+
+The colour of the tiles will change to show how close your guess was to the word.
 
 ![Example usage](./example.png)
 
