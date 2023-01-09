@@ -1,6 +1,6 @@
 # A Python Wordle
 
-This program uses all in-built Python packages, no need for a virtual environment.
+This program uses standard Python 3.11 packages, no need for a virtual environment.
 
 ## Installation
 Clone repo
